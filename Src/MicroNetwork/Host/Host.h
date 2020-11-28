@@ -12,6 +12,7 @@
 #include <mutex>
 #include <functional>
 #include <LFramework/Debug.h>
+#include <LFramework/Guid.h>
 
 namespace MicroNetwork::Host {
 
@@ -82,7 +83,7 @@ private:
 
 class NodeContext {
 public:
-    NodeContext(std::uint8_t realId, std::uint32_t virtualId, Host* host) : _realId(realId), _virtualId(virtualId), _host(host){
+    NodeContext(std::uint8_t realId, std::uint32_t virtualId, std::uint32_t tasksCount, Host* host) : _realId(realId), _virtualId(virtualId), _tasksCount(tasksCount), _host(host){
 
     }
     void handleNetworkPacket(Common::PacketHeader header, const void* data) {
@@ -114,9 +115,18 @@ public:
 
     IDataReceiver* startTask(IDataReceiver* userDataReceiver);
 
+    void addTask(LFramework::Guid taskId) {
+        _tasks.push_back(taskId);
+    }
+
+    bool initialized() const {
+        return _tasksCount == _tasks.size();
+    }
 private:
     std::uint8_t _realId;
     std::uint32_t _virtualId;
+    std::uint32_t _tasksCount;
+    std::vector<LFramework::Guid> _tasks;
     Host* _host = nullptr;
     std::recursive_mutex _taskMutex;
     std::shared_ptr<TaskContextConstructor> _nextTask = nullptr;
@@ -138,6 +148,7 @@ public:
         if(_node != nullptr){
             return _node->startTask(userDataReceiver);
         }
+        return nullptr;
     }
 
     std::vector<std::uint32_t> getNodes() {
@@ -202,12 +213,23 @@ protected:
 
                 lfDebug() << "Bind response received";
                 lfAssert(_node == nullptr);
-                _node = new NodeContext(0, 0, this);
+                lfAssert(packet.header.size == 4);
+                std::uint32_t tasksCount;
+                memcpy(&tasksCount, packet.payload.data(), sizeof(tasksCount));
+                _node = new NodeContext(0, 0, tasksCount, this);
                 lfDebug() << "Node context created";
                 _state++;
 
             }else if(_node != nullptr){
-                _node->handleNetworkPacket(packet.header, packet.payload.data());
+                if(packet.header.id == Common::PacketId::TaskDescription){
+                    lfAssert(packet.header.size == sizeof(LFramework::Guid));
+                    LFramework::Guid taskId;
+                    memcpy(&taskId, packet.payload.data(), sizeof(taskId));
+                    _node->addTask(taskId);
+                    lfDebug() << "Received task ID";
+                }else{
+                    _node->handleNetworkPacket(packet.header, packet.payload.data());
+                }
             }else{
                 lfDebug() << "Drop packet";
             }
