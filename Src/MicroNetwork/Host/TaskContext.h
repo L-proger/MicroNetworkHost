@@ -1,34 +1,9 @@
 #pragma once
 
-#include <atomic>
 #include <MicroNetwork/Common/IDataReceiver.h>
+#include <MicroNetwork/Host/ITaskContext.h>
+#include <atomic>
 #include <mutex>
-
-namespace MicroNetwork::Host {
-    class ITaskContext;
-}
-
-namespace LFramework {
-template<>
-struct InterfaceAbi<MicroNetwork::Host::ITaskContext> : public InterfaceAbi<IUnknown> {
-    using Base = InterfaceAbi<IUnknown>;
-    static constexpr InterfaceID ID() { return 8; }
-    virtual Result setUserDataReceiver(LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> userDataReceiver) = 0;
-    virtual Result handleNetworkPacket(MicroNetwork::Common::PacketHeader header, const void* data) = 0;
-    virtual Result onTaskStopped() = 0;
-};
-
-template<class TImplementer>
-struct InterfaceRemap<MicroNetwork::Host::ITaskContext, TImplementer> : public InterfaceRemap<IUnknown, TImplementer> {
-public:
-    virtual Result setUserDataReceiver(LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> userDataReceiver) { return this->_implementer->setUserDataReceiver(userDataReceiver); }
-    virtual Result handleNetworkPacket(MicroNetwork::Common::PacketHeader header, const void* data) { return this->_implementer->handleNetworkPacket(header, data); }
-    virtual Result onTaskStopped() { return this->_implementer->onTaskStopped(); }
-};
-}
-
-
-
 
 namespace MicroNetwork::Host {
 
@@ -57,7 +32,7 @@ public:
     }
 private:
     std::recursive_mutex _taskMutex;
-    LFramework::ComPtr<Common::IDataReceiver> _userDataReceiver = nullptr;
+    LFramework::ComPtr<Common::IDataReceiver> _userDataReceiver;
     NodeContext* _node;
 };
 
