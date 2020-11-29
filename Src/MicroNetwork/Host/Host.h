@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <MicroNetwork/Common/DataStream.h>
+#include <MicroNetwork/Common/IDataReceiver.h>
 #include <LFramework/USB/Host/UsbHDevice.h>
 #include <LFramework/Threading/Semaphore.h>
 #include <LFramework/Threading/CriticalSection.h>
@@ -13,58 +14,12 @@
 #include <functional>
 #include <LFramework/Debug.h>
 #include <LFramework/Guid.h>
+#include <MicroNetwork/Host/TaskContext.h>
 
 namespace MicroNetwork::Host {
 
-class IDataReceiver {
-public:
-    virtual ~IDataReceiver() = default;
-    virtual bool handlePacket(Common::PacketHeader header, const void* data) = 0;
-    virtual void release() = 0;
-};
-
 class Host;
-class NodeContext;
 
-class TaskContext : public IDataReceiver {
-public:
-    TaskContext(NodeContext* node) : _node(node) {
-
-    }
-
-    void onTaskStopped() {
-        if(_userDataReceiver != nullptr){
-            _userDataReceiver->release();
-            _userDataReceiver = nullptr;
-        }
-    }
-    void handleNetworkPacket(Common::PacketHeader header, const void* data) {
-        std::lock_guard<std::recursive_mutex> lock(_taskMutex);
-        if(_userDataReceiver != nullptr){
-            _userDataReceiver->handlePacket(header, data);
-        }
-    }
-
-    bool handlePacket(Common::PacketHeader header, const void* data) override;
-    void release() override {
-        auto prevCount =_refcount.fetch_sub(1);
-        if(prevCount == 1){
-            lfDebug() << "Delete TaskContext";
-            delete this;
-        }
-    }
-    void setUserDataReceiver(IDataReceiver* userDataReceiver) {
-        _userDataReceiver = userDataReceiver;
-    }
-    void addref() {
-        _refcount++;
-    }
-private:
-    std::atomic<std::uint32_t> _refcount = 1;
-    std::recursive_mutex _taskMutex;
-    IDataReceiver* _userDataReceiver = nullptr;
-    NodeContext* _node;
-};
 
 class TaskContextConstructor {
 public:
@@ -92,8 +47,7 @@ public:
         if(header.id == Common::PacketId::TaskStop){
             if(_currentTask != nullptr){
                 _currentTask->onTaskStopped();
-                _currentTask->release();
-                _currentTask = nullptr;
+                _currentTask.reset();
             }
         }else if(header.id == Common::PacketId::TaskStart){
             std::lock_guard<std::recursive_mutex> lock(_taskMutex);
@@ -113,7 +67,7 @@ public:
         return _virtualId;
     }
 
-    IDataReceiver* startTask(IDataReceiver* userDataReceiver);
+    LFramework::ComPtr<Common::IDataReceiver> startTask(LFramework::ComPtr<Common::IDataReceiver> userDataReceiver);
 
     void addTask(LFramework::Guid taskId) {
         _tasks.push_back(taskId);
@@ -130,7 +84,7 @@ private:
     Host* _host = nullptr;
     std::recursive_mutex _taskMutex;
     std::shared_ptr<TaskContextConstructor> _nextTask = nullptr;
-    TaskContext* _currentTask = nullptr;
+    LFramework::ComPtr<ITaskContext> _currentTask = nullptr;
 };
 
 
@@ -144,7 +98,7 @@ public:
         return true;
     }
 
-    IDataReceiver* startTask(std::uint32_t node, IDataReceiver* userDataReceiver){
+    LFramework::ComPtr<Common::IDataReceiver> startTask(std::uint32_t node, LFramework::ComPtr<Common::IDataReceiver> userDataReceiver){
         if(_node != nullptr){
             return _node->startTask(userDataReceiver);
         }

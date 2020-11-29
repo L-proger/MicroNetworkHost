@@ -2,16 +2,16 @@
 
 namespace MicroNetwork::Host {
 
-bool TaskContext::handlePacket(Common::PacketHeader header, const void* data) {
+LFramework::Result TaskContext::packet(Common::PacketHeader header, const void* data) {
     std::lock_guard<std::recursive_mutex> lock(_taskMutex);
     if(_userDataReceiver != nullptr){
-        return _node->handleUserPacket(header, data);
+        return _node->handleUserPacket(header, data) ? LFramework::Result::Ok : LFramework::Result::UnknownFailure;
     }else{
-        return false;
+        return LFramework::Result::UnknownFailure;
     }
 }
 
-IDataReceiver* NodeContext::startTask(IDataReceiver* userDataReceiver) {
+LFramework::ComPtr<Common::IDataReceiver> NodeContext::startTask(LFramework::ComPtr<Common::IDataReceiver> userDataReceiver) {
     {
         std::lock_guard<std::recursive_mutex> lock(_taskMutex);
         if((_currentTask != nullptr) || (_nextTask != nullptr)){
@@ -32,10 +32,11 @@ IDataReceiver* NodeContext::startTask(IDataReceiver* userDataReceiver) {
     if(!started) {
         return nullptr;
     }else{
-        _currentTask = new TaskContext(this);
+        _currentTask.reset();
+        auto obj = new TaskContext(this);
+        _currentTask.attach(obj->queryInterface<ITaskContext>());
         _currentTask->setUserDataReceiver(userDataReceiver);
-        _currentTask->addref(); //User ref
-         return _currentTask;
+        return _currentTask.queryInterface<Common::IDataReceiver>();
     }
 }
 
