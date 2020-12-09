@@ -14,88 +14,23 @@
 #include <functional>
 #include <LFramework/Debug.h>
 #include <LFramework/Guid.h>
-#include <MicroNetwork/Host/TaskContext.h>
+#include <MicroNetwork/Host/NodeContext.h>
 
 namespace MicroNetwork::Host {
 
-class Host;
-
-
-class TaskContextConstructor {
-public:
-    void finalize(bool success){
-        _success = success;
-        _completionSemaphore.give();
-    }
-    bool wait() {
-        _completionSemaphore.take();
-        return _success;
-    }
-private:
-    bool _success = false;
-    LFramework::Threading::BinarySemaphore _completionSemaphore;
-};
-
-class NodeContext {
-public:
-    NodeContext(std::uint8_t realId, std::uint32_t virtualId, std::uint32_t tasksCount, Host* host) : _realId(realId), _virtualId(virtualId), _tasksCount(tasksCount), _host(host){
-
-    }
-    void handleNetworkPacket(Common::PacketHeader header, const void* data) {
-        lfDebug() << "Node context received packet: id=" << header.id << " size=" << header.size;
-
-        if(header.id == Common::PacketId::TaskStop){
-            if(_currentTask != nullptr){
-                _currentTask->onTaskStopped();
-                _currentTask.reset();
-            }
-        }else if(header.id == Common::PacketId::TaskStart){
-            std::lock_guard<std::recursive_mutex> lock(_taskMutex);
-            if(_nextTask != nullptr){
-                _nextTask->finalize(true);
-            }
-        }else{
-            std::lock_guard<std::recursive_mutex> lock(_taskMutex);
-            _currentTask->handleNetworkPacket(header, data);
-        }
-    }
-    bool handleUserPacket(Common::PacketHeader header, const void* data);
-    std::uint8_t getRealId() const {
-        return _realId;
-    }
-    std::uint32_t getVirtualId() const {
-        return _virtualId;
-    }
-
-    LFramework::ComPtr<Common::IDataReceiver> startTask(LFramework::ComPtr<Common::IDataReceiver> userDataReceiver);
-
-    void addTask(LFramework::Guid taskId) {
-        _tasks.push_back(taskId);
-    }
-
-    bool initialized() const {
-        return _tasksCount == _tasks.size();
-    }
-private:
-    std::uint8_t _realId;
-    std::uint32_t _virtualId;
-    std::uint32_t _tasksCount;
-    std::vector<LFramework::Guid> _tasks;
-    Host* _host = nullptr;
-    std::recursive_mutex _taskMutex;
-    std::shared_ptr<TaskContextConstructor> _nextTask = nullptr;
-    LFramework::ComPtr<ITaskContext> _currentTask = nullptr;
-};
-
-
-
-
 class Host : public Common::DataStream {
 public:
-
+    Host(std::string path, std::shared_ptr<DataStream> remoteStream) : _remoteStream(remoteStream), _path(path) {
+        remoteStream->bind(this);
+        bind(remoteStream.get());
+    }
     bool start() override {
         _txAvailable.give();
         return true;
+    }
+
+    ~Host(){
+
     }
 
     LFramework::ComPtr<Common::IDataReceiver> startTask(std::uint32_t node, LFramework::ComPtr<Common::IDataReceiver> userDataReceiver){
@@ -117,6 +52,7 @@ public:
     std::uint32_t getState() {
         return _state;
     }
+
     bool blockingWritePacket(Common::PacketHeader header, const void* data) {
         while(true){
             _txAvailable.take();
@@ -128,7 +64,13 @@ public:
             }
         }
     }
+
+    const std::string& getPath() const {
+        return _path;
+    }
 protected:
+    std::shared_ptr<DataStream> _remoteStream;
+    std::string _path;
     std::atomic<std::uint32_t> _state = 0;
     std::mutex _nodeContextMutex;
     NodeContext* _node = nullptr;

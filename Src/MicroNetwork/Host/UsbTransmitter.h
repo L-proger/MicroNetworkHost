@@ -20,6 +20,17 @@ public:
         _rxEndpoint = usbInterface->getEndpoint(true, 0);
     }
 
+    ~UsbTransmitter() {
+        _running = false;
+        if(_rxThread.joinable()){
+            _rxThread.join();
+        }
+        if(_txThread.joinable()){
+             _txJob.give();
+            _txThread.join();
+        }
+    }
+
     bool start() override {
         //Fill read chain
         for (size_t i = 0; i < 8; ++i) {
