@@ -29,7 +29,7 @@ private:
 
 class NodeContext {
 public:
-    NodeContext(std::uint8_t realId, std::uint32_t virtualId, std::uint32_t tasksCount, Host* host) : _realId(realId), _virtualId(virtualId), _tasksCount(tasksCount), _host(host){
+    NodeContext(std::uint8_t realId, std::uint32_t tasksCount, Host* host) : _realId(realId),  _tasksCount(tasksCount), _host(host){
 
     }
     void handleNetworkPacket(Common::PacketHeader header, const void* data) {
@@ -54,9 +54,7 @@ public:
     std::uint8_t getRealId() const {
         return _realId;
     }
-    std::uint32_t getVirtualId() const {
-        return _virtualId;
-    }
+
 
     LFramework::ComPtr<Common::IDataReceiver> startTask(LFramework::ComPtr<Common::IDataReceiver> userDataReceiver);
 
@@ -80,7 +78,6 @@ public:
     }
 private:
     std::uint8_t _realId;
-    std::uint32_t _virtualId;
     std::uint32_t _tasksCount;
     std::vector<LFramework::Guid> _tasks;
     Host* _host = nullptr;

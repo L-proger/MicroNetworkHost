@@ -18,9 +18,16 @@
 
 namespace MicroNetwork::Host {
 
+class INodeContainer {
+public:
+    virtual ~INodeContainer() = default;
+    virtual void addNode(std::shared_ptr<NodeContext> node) = 0;
+    virtual void removeNode(std::shared_ptr<NodeContext> node) = 0;
+};
+
 class Host : public Common::DataStream {
 public:
-    Host(std::string path, std::shared_ptr<DataStream> remoteStream) : _remoteStream(remoteStream), _path(path) {
+    Host(std::string path, std::shared_ptr<DataStream> remoteStream, INodeContainer* nodeContainer) : _remoteStream(remoteStream), _path(path), _nodeContainer(nodeContainer) {
         remoteStream->bind(this);
         bind(remoteStream.get());
     }
@@ -30,23 +37,8 @@ public:
     }
 
     ~Host(){
-
-    }
-
-    LFramework::ComPtr<Common::IDataReceiver> startTask(std::uint32_t node, LFramework::ComPtr<Common::IDataReceiver> userDataReceiver){
-        if(_node != nullptr){
-            return _node->startTask(userDataReceiver);
-        }
-        return nullptr;
-    }
-
-    std::vector<std::uint32_t> getNodes() {
-        std::vector<std::uint32_t> result;
-        std::lock_guard<std::mutex> lock(_nodeContextMutex);
-        if(_node != nullptr) {
-            result.push_back(_node->getVirtualId());
-        }
-        return result;
+        notifyDisconnect();
+        clearNodes();
     }
 
     std::uint32_t getState() {
@@ -65,6 +57,10 @@ public:
         }
     }
 
+    bool isConnected() {
+        return _connected;
+    }
+
     const std::string& getPath() const {
         return _path;
     }
@@ -73,7 +69,7 @@ protected:
     std::string _path;
     std::atomic<std::uint32_t> _state = 0;
     std::mutex _nodeContextMutex;
-    NodeContext* _node = nullptr;
+    std::unordered_map<std::uint8_t, std::shared_ptr<NodeContext>> _nodes;
 
     bool readPacket(Common::MaxPacket& packet) {
         LFramework::Threading::CriticalSection lock;
@@ -94,6 +90,34 @@ protected:
         return true;
     }
 
+    void onRemoteDisconnect() override {
+        _connected = false;
+    }
+
+    void clearNodes() {
+        for(auto node : _nodes){
+            _nodeContainer->removeNode(node.second);
+        }
+        _nodes.clear();
+    }
+
+    void addNode(std::uint8_t nodeId, std::shared_ptr<NodeContext> node) {
+        if(_nodes.find(nodeId) != _nodes.end()){
+            lfDebug() << "Node exists!!!!";
+            for(;;);
+        }
+        _nodes[nodeId] = node;
+        _nodeContainer->addNode(node);
+    }
+
+    std::shared_ptr<NodeContext> getNode(std::uint8_t nodeId){
+        auto resultIt = _nodes.find(nodeId);
+        if(resultIt == _nodes.end()){
+            return nullptr;
+        }
+        return resultIt->second;
+    }
+
     void onRemoteReset() override {
         //Send bind packet
         Common::MaxPacket packet;
@@ -108,26 +132,33 @@ protected:
                 std::lock_guard<std::mutex> lock(_nodeContextMutex);
 
                 lfDebug() << "Bind response received";
-                lfAssert(_node == nullptr);
+
                 lfAssert(packet.header.size == 4);
                 std::uint32_t tasksCount;
                 memcpy(&tasksCount, packet.payload.data(), sizeof(tasksCount));
-                _node = new NodeContext(0, 0, tasksCount, this);
+
+                auto nodeId = 0;
+                auto nodeContext = std::make_shared<NodeContext>(nodeId, tasksCount, this);
+                addNode(nodeId, nodeContext);
                 lfDebug() << "Node context created";
                 _state++;
 
-            }else if(_node != nullptr){
-                if(packet.header.id == Common::PacketId::TaskDescription){
-                    lfAssert(packet.header.size == sizeof(LFramework::Guid));
-                    LFramework::Guid taskId;
-                    memcpy(&taskId, packet.payload.data(), sizeof(taskId));
-                    _node->addTask(taskId);
-                    lfDebug() << "Received task ID";
-                }else{
-                    _node->handleNetworkPacket(packet.header, packet.payload.data());
-                }
             }else{
-                lfDebug() << "Drop packet";
+                auto nodeId = 0;
+                auto node = getNode(nodeId);
+                if(node != nullptr){
+                    if(packet.header.id == Common::PacketId::TaskDescription){
+                        lfAssert(packet.header.size == sizeof(LFramework::Guid));
+                        LFramework::Guid taskId;
+                        memcpy(&taskId, packet.payload.data(), sizeof(taskId));
+                        node->addTask(taskId);
+                        lfDebug() << "Received task ID";
+                    }else{
+                        node->handleNetworkPacket(packet.header, packet.payload.data());
+                    }
+                }else{
+                    lfDebug() << "Drop packet";
+                }
             }
         }
     }
@@ -136,7 +167,8 @@ protected:
     }
 
 private:
-
+    bool _connected = true;
+    INodeContainer* _nodeContainer = nullptr;
     LFramework::Threading::BinarySemaphore _txAvailable;
 };
 

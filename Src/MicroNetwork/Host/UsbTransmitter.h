@@ -31,6 +31,7 @@ public:
         }
     }
 
+
     bool start() override {
         //Fill read chain
         for (size_t i = 0; i < 8; ++i) {
@@ -64,6 +65,10 @@ private:
             asyncResult = ep->transferAsync(buffer.data(), buffer.size());
        }
     };
+
+    void onRemoteDisconnect() override {
+
+    }
     void onRemoteReset() override {
 
     }
@@ -112,6 +117,7 @@ private:
                 _running = false;
             }
         }
+        notifyDisconnect();
     }
 
     void txThreadHandler() {
@@ -142,6 +148,7 @@ private:
             lfDebug() << "TX thread exception: " << ex.what();
             _running = false;
         }
+        notifyDisconnect();
     }
 
 

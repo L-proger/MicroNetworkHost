@@ -13,12 +13,7 @@
 namespace MicroNetwork::Host {
 
 
-class INodeContainer {
-public:
-    virtual ~INodeContainer() = default;
-    virtual void addNode(std::shared_ptr<NodeContext> node) = 0;
-    virtual void removeNode(std::shared_ptr<NodeContext> node) = 0;
-};
+
 
 class LinkProviderContext : public ILinkCallback{
 public:
@@ -33,7 +28,7 @@ public:
         //remove deleted links
         auto it = _hosts.begin();
         while (it != _hosts.end()) {
-            if(std::find(newLinks.begin(), newLinks.end(), (*it)->getPath()) == newLinks.end()){
+            if(!(*it)->isConnected() || std::find(newLinks.begin(), newLinks.end(), (*it)->getPath()) == newLinks.end()){
                 it = _hosts.erase(it);
             } else {
                 ++it;
@@ -45,7 +40,7 @@ public:
             if(!hasHost(link)){
                 try{
                     auto stream = _provider->makeStream(link);
-                    auto host = std::make_shared<Host>(link, stream);
+                    auto host = std::make_shared<Host>(link, stream, _nodeContainer);
                     stream->start();
                     lfDebug() << "Host created for path: " << link.c_str();
                     _hosts.push_back(host);
@@ -103,15 +98,18 @@ public:
     }
 
     void addNode(std::shared_ptr<NodeContext> node) override{
+        lfDebug() << "Add node";
         std::lock_guard<std::mutex> lock(_nodesMutex);
         _nodes[_lastNodeId++] = node;
         ++_stateId;
     }
     void removeNode(std::shared_ptr<NodeContext> node) override{
+        lfDebug() << "Remove node";
         std::lock_guard<std::mutex> lock(_nodesMutex);
         for(auto nodeRecord : _nodes){
             if(nodeRecord.second == node){
                 _nodes.erase(nodeRecord.first);
+                break;
             }
         }
         ++_stateId;
