@@ -2,9 +2,18 @@
 
 #include <MicroNetwork/Common/IDataReceiver.h>
 #include <vector>
+#include <cstdint>
 
 namespace MicroNetwork::Host {
     class INetwork;
+
+    enum class NodeState {
+        Idle,
+        TaskLaunched,
+        InvalidNode
+    };
+
+    using NodeHandle = std::uint32_t;
 }
 
 namespace LFramework {
@@ -15,7 +24,8 @@ struct InterfaceAbi<MicroNetwork::Host::INetwork> : public InterfaceAbi<IUnknown
 
     virtual LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> startTask(std::uint32_t node, LFramework::Guid taskId, LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> userDataReceiver) = 0;
     virtual bool isTaskSupported(std::uint32_t node, LFramework::Guid taskId) = 0;
-    virtual std::vector<std::uint32_t> getNodes() = 0;
+    virtual std::vector<MicroNetwork::Host::NodeHandle> getNodes() = 0;
+    virtual MicroNetwork::Host::NodeState getNodeState(MicroNetwork::Host::NodeHandle node) = 0;
     virtual std::uint32_t getStateId() = 0;
 };
 
@@ -25,6 +35,7 @@ public:
     virtual LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> startTask(std::uint32_t node, LFramework::Guid taskId, LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> userDataReceiver) { return this->_implementer->startTask(node, taskId, userDataReceiver); }
     virtual bool isTaskSupported(std::uint32_t node, LFramework::Guid taskId)  { return this->_implementer->isTaskSupported(node, taskId); }
     virtual std::vector<std::uint32_t> getNodes() { return this->_implementer->getNodes(); }
+    virtual MicroNetwork::Host::NodeState getNodeState(MicroNetwork::Host::NodeHandle node) { return this->_implementer->getNodeState(node); }
     virtual std::uint32_t getStateId(){ return this->_implementer->getStateId(); }
 };
 }

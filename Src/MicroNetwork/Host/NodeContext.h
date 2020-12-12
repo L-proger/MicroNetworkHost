@@ -56,7 +56,7 @@ public:
     }
 
 
-    LFramework::ComPtr<Common::IDataReceiver> startTask(LFramework::ComPtr<Common::IDataReceiver> userDataReceiver);
+    LFramework::ComPtr<Common::IDataReceiver> startTask(LFramework::Guid taskId, LFramework::ComPtr<Common::IDataReceiver> userDataReceiver);
 
     void addTask(LFramework::Guid taskId) {
         std::lock_guard<std::recursive_mutex> lock(_taskMutex);

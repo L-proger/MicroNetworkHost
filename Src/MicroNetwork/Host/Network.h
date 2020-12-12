@@ -49,7 +49,6 @@ public:
                 }
             }
         }
-
     }
 private:
     bool hasHost(const std::string& path){
@@ -73,18 +72,33 @@ public:
                                      this)
                                  );
     }
-    LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> startTask(std::uint32_t node, LFramework::Guid taskId, LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> userDataReceiver){
-        return nullptr;
+    LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> startTask(NodeHandle nodeHandle, LFramework::Guid taskId, LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> userDataReceiver){
+        std::unique_lock<std::mutex> lock(_nodesMutex);
+        auto node = getNode(nodeHandle);
+        lock.unlock();
+        if (node == nullptr) { return nullptr; }
+        return node->startTask(taskId, userDataReceiver);
     }
-    bool isTaskSupported(std::uint32_t node, LFramework::Guid taskId){
+
+    bool isTaskSupported(NodeHandle nodeHandle, LFramework::Guid taskId){
         std::lock_guard<std::mutex> lock(_nodesMutex);
-        for(auto nodeRecord : _nodes){
-            if(nodeRecord.first == node){
-                return nodeRecord.second->isTaskSupported(taskId);
-            }
+        auto node = getNode(nodeHandle);
+        if (node != nullptr) {
+            return node->isTaskSupported(taskId);
         }
         return false;
     }
+
+    NodeState getNodeState(MicroNetwork::Host::NodeHandle nodeHandle) {
+        std::lock_guard<std::mutex> lock(_nodesMutex);
+        auto node = getNode(nodeHandle);
+        if (node == nullptr) {
+            return NodeState::InvalidNode;
+        }
+        //TODO: implement
+        return NodeState::InvalidNode;
+    }
+
     std::vector<std::uint32_t> getNodes(){
         std::lock_guard<std::mutex> lock(_nodesMutex);
         std::vector<std::uint32_t> result;
@@ -115,7 +129,13 @@ public:
         ++_stateId;
     }
 private:
-
+    std::shared_ptr<NodeContext> getNode(NodeHandle node) {
+        auto it = _nodes.find(node);
+        if (it == _nodes.end()) {
+            return nullptr;
+        }
+        return it->second;
+    }
     std::mutex _nodesMutex;
     std::uint32_t _lastNodeId = 0;
     std::atomic<std::uint32_t> _stateId = 0;

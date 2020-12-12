@@ -4,7 +4,11 @@ namespace MicroNetwork::Host {
 
 
 
-LFramework::ComPtr<Common::IDataReceiver> NodeContext::startTask(LFramework::ComPtr<Common::IDataReceiver> userDataReceiver) {
+LFramework::ComPtr<Common::IDataReceiver> NodeContext::startTask(LFramework::Guid taskId, LFramework::ComPtr<Common::IDataReceiver> userDataReceiver) {
+    if (!initialized()) {
+        return nullptr;
+    }
+
     {
         std::lock_guard<std::recursive_mutex> lock(_taskMutex);
         if((_currentTask != nullptr) || (_nextTask != nullptr)){
@@ -15,7 +19,7 @@ LFramework::ComPtr<Common::IDataReceiver> NodeContext::startTask(LFramework::Com
 
     Common::MaxPacket packet;
     packet.header.id = Common::PacketId::TaskStart;
-    packet.header.size = 0;
+    packet.setData(taskId);
     _host->blockingWritePacket(packet.header, packet.payload.data());
 
     bool started = _nextTask->wait();
