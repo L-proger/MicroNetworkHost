@@ -32,10 +32,10 @@ struct InterfaceAbi<MicroNetwork::Host::INetwork> : public InterfaceAbi<IUnknown
 template<class TImplementer>
 struct InterfaceRemap<MicroNetwork::Host::INetwork, TImplementer> : public InterfaceRemap<IUnknown, TImplementer> {
 public:
-    virtual LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> startTask(std::uint32_t node, LFramework::Guid taskId, LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> userDataReceiver) { return this->_implementer->startTask(node, taskId, userDataReceiver); }
-    virtual bool isTaskSupported(std::uint32_t node, LFramework::Guid taskId)  { return this->_implementer->isTaskSupported(node, taskId); }
-    virtual std::vector<std::uint32_t> getNodes() { return this->_implementer->getNodes(); }
-    virtual MicroNetwork::Host::NodeState getNodeState(MicroNetwork::Host::NodeHandle node) { return this->_implementer->getNodeState(node); }
-    virtual std::uint32_t getStateId(){ return this->_implementer->getStateId(); }
+    virtual LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> startTask(std::uint32_t node, LFramework::Guid taskId, LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> userDataReceiver) { return this->implementer()->startTask(node, taskId, userDataReceiver); }
+    virtual bool isTaskSupported(std::uint32_t node, LFramework::Guid taskId)  { return this->implementer()->isTaskSupported(node, taskId); }
+    virtual std::vector<std::uint32_t> getNodes() { return this->implementer()->getNodes(); }
+    virtual MicroNetwork::Host::NodeState getNodeState(MicroNetwork::Host::NodeHandle node) { return this->implementer()->getNodeState(node); }
+    virtual std::uint32_t getStateId(){ return this->implementer()->getStateId(); }
 };
 }

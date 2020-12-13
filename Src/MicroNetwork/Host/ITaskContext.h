@@ -20,8 +20,8 @@ struct InterfaceAbi<MicroNetwork::Host::ITaskContext> : public InterfaceAbi<IUnk
 template<class TImplementer>
 struct InterfaceRemap<MicroNetwork::Host::ITaskContext, TImplementer> : public InterfaceRemap<IUnknown, TImplementer> {
 public:
-    virtual Result setUserDataReceiver(LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> userDataReceiver) { return this->_implementer->setUserDataReceiver(userDataReceiver); }
-    virtual Result handleNetworkPacket(MicroNetwork::Common::PacketHeader header, const void* data) { return this->_implementer->handleNetworkPacket(header, data); }
-    virtual Result onTaskStopped() { return this->_implementer->onTaskStopped(); }
+    virtual Result setUserDataReceiver(LFramework::ComPtr<MicroNetwork::Common::IDataReceiver> userDataReceiver) { return this->implementer()->setUserDataReceiver(userDataReceiver); }
+    virtual Result handleNetworkPacket(MicroNetwork::Common::PacketHeader header, const void* data) { return this->implementer()->handleNetworkPacket(header, data); }
+    virtual Result onTaskStopped() { return this->implementer()->onTaskStopped(); }
 };
 }
