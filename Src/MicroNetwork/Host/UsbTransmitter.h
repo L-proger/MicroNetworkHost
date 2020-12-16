@@ -23,6 +23,7 @@ public:
     ~UsbTransmitter() {
         _running = false;
         if(_rxThread.joinable()){
+            _rxJob.give();
             _rxThread.join();
         }
         if(_txThread.joinable()){
@@ -76,6 +77,7 @@ private:
         _txJob.give();
     }
     void onReadBytes() override {
+        _rxJob.give();
     }
 
     size_t usbTransmit(void* data, uint32_t size) {
@@ -93,17 +95,23 @@ private:
                 for(auto& item : _readChain){
                     auto rxSize = item->asyncResult->wait();
 
-                    lfDebug() << "Received USB packet: size=" << rxSize;
+                   // lfDebug() << "Received USB packet: size=" << rxSize;
                     if(rxSize == 0){
                         _synchronized = true;
-                        lfDebug() << "Sync received";
+                        //lfDebug() << "Sync received";
                     }else if(_synchronized) {
-                        if( write(item->buffer.data(), rxSize) != rxSize){
-                            lfDebug() << "RX buffer fail";
-                            for(;;);
-                        }else{
-                            lfDebug() << "Received synced USB packet: size=" << rxSize;
+
+                        std::size_t doneRxSize = 0;
+                        while(true){
+                            doneRxSize += write(item->buffer.data() + doneRxSize, rxSize - doneRxSize);
+                            if(_running && (doneRxSize != rxSize)){
+                                lfDebug() << "RX buffer stall";
+                                _rxJob.take();
+                            }else{
+                                break;
+                            }
                         }
+                        //lfDebug() << "Received synced USB packet: size=" << rxSize;
                     }
 
                     if(_running){
@@ -158,6 +166,7 @@ private:
     std::thread _rxThread;
     std::thread _txThread;
 
+    LFramework::Threading::BinarySemaphore _rxJob;
     LFramework::Threading::BinarySemaphore _txJob;
     LFramework::USB::UsbHEndpoint* _txEndpoint = nullptr;
     LFramework::USB::UsbHEndpoint* _rxEndpoint = nullptr;

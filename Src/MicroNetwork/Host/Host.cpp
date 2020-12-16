@@ -1,8 +1,6 @@
 #include "Host.h"
-
+#include <MicroNetwork/Host/ITaskContext.h>
 namespace MicroNetwork::Host {
-
-
 
 LFramework::ComPtr<Common::IDataReceiver> NodeContext::startTask(LFramework::Guid taskId, LFramework::ComPtr<Common::IDataReceiver> userDataReceiver) {
     if (!initialized()) {
@@ -31,9 +29,9 @@ LFramework::ComPtr<Common::IDataReceiver> NodeContext::startTask(LFramework::Gui
     }else{
         _currentTask.reset();
         auto obj = new TaskContext(this);
-        _currentTask.attach(obj->queryInterface<ITaskContext>());
+        _currentTask = LFramework::makeComDelegate<ITaskContext>(obj, &TaskContext::onNetworkRelease);
         _currentTask->setUserDataReceiver(userDataReceiver);
-        return _currentTask.queryInterface<Common::IDataReceiver>();
+        return LFramework::makeComDelegate<Common::IDataReceiver>(obj, &TaskContext::onUserRelease);
     }
 }
 

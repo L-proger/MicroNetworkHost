@@ -49,9 +49,11 @@ public:
         while(true){
             _txAvailable.take();
             LFramework::Threading::CriticalSection lock;
-            if(freeSpace() >= (sizeof(header) + header.size)){
+            if(freeSpace() >= header.fullSize()){
                 write(&header, sizeof(header));
-                write(data, header.size);
+                if(data != nullptr){
+                    write(data, header.size);
+                }
                 return true;
             }
         }
@@ -162,6 +164,9 @@ protected:
             }
         }
     }
+
+
+
     void onReadBytes() override {
         _txAvailable.give();
     }

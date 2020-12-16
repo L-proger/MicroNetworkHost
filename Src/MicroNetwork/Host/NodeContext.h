@@ -32,12 +32,14 @@ public:
     NodeContext(std::uint8_t realId, std::uint32_t tasksCount, Host* host) : _realId(realId),  _tasksCount(tasksCount), _host(host){
 
     }
+    ~NodeContext() {
+
+    }
     void handleNetworkPacket(Common::PacketHeader header, const void* data) {
-        lfDebug() << "Node context received packet: id=" << header.id << " size=" << header.size;
+        //lfDebug() << "Node context received packet: id=" << header.id << " size=" << header.size;
 
         if(header.id == Common::PacketId::TaskStop){
             if(_currentTask != nullptr){
-                _currentTask->onTaskStopped();
                 _currentTask.reset();
             }
         }else if(header.id == Common::PacketId::TaskStart){
@@ -75,6 +77,13 @@ public:
             }
         }
         return false;
+    }
+
+    void requestTaskStop() {
+        Common::PacketHeader packet;
+        packet.id = Common::PacketId::TaskStop;
+        packet.size = 0;
+        handleUserPacket(packet, nullptr);
     }
 private:
     std::uint8_t _realId;

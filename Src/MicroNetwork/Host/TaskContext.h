@@ -8,14 +8,10 @@
 namespace MicroNetwork::Host {
 
 class NodeContext;
-class TaskContext : public LFramework::ComImplement<TaskContext, LFramework::ComObject, Common::IDataReceiver, ITaskContext> {
+class TaskContext : public LFramework::RefCountedObject {
 public:
     TaskContext(NodeContext* node) : _node(node) {
 
-    }
-    LFramework::Result onTaskStopped() {
-        _userDataReceiver.reset();
-        return LFramework::Result::Ok;
     }
     LFramework::Result handleNetworkPacket(Common::PacketHeader header, const void* data) {
         std::lock_guard<std::recursive_mutex> lock(_taskMutex);
@@ -30,8 +26,13 @@ public:
         _userDataReceiver = userDataReceiver;
         return LFramework::Result::Ok;
     }
+
+    void onNetworkRelease();
+    void onUserRelease();
 private:
     std::recursive_mutex _taskMutex;
+    std::recursive_mutex _txMutex;
+    bool _txClosed = false;
     LFramework::ComPtr<Common::IDataReceiver> _userDataReceiver;
     NodeContext* _node;
 };
