@@ -89,14 +89,25 @@ public:
         return false;
     }
 
+
+
     NodeState getNodeState(MicroNetwork::Host::NodeHandle nodeHandle) {
         std::lock_guard<std::mutex> lock(_nodesMutex);
         auto node = getNode(nodeHandle);
         if (node == nullptr) {
             return NodeState::InvalidNode;
         }
+
+        if(!node->isReady()){
+            return NodeState::NotReady;
+        }
+
+        if(node->isTaskLaunched()){
+            return NodeState::TaskLaunched;
+        }
+
         //TODO: implement
-        return NodeState::InvalidNode;
+        return NodeState::Idle;
     }
 
     std::vector<std::uint32_t> getNodes(){

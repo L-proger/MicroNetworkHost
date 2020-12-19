@@ -39,10 +39,12 @@ public:
         //lfDebug() << "Node context received packet: id=" << header.id << " size=" << header.size;
 
         if(header.id == Common::PacketId::TaskStop){
+            //lfDebug() << "Received TaskStop";
             if(_currentTask != nullptr){
                 _currentTask.reset();
             }
         }else if(header.id == Common::PacketId::TaskStart){
+            //lfDebug() << "Received TaskStart";
             std::lock_guard<std::recursive_mutex> lock(_taskMutex);
             if(_nextTask != nullptr){
                 _nextTask->finalize(true);
@@ -65,8 +67,12 @@ public:
         _tasks.push_back(taskId);
     }
 
-    bool initialized() const {
-        return _tasksCount == _tasks.size();
+    bool isReady() const {
+        return _tasks.size() == _tasksCount;
+    }
+
+    bool isTaskLaunched() {
+        return _currentTask != nullptr;
     }
 
     bool isTaskSupported(LFramework::Guid taskId) const {
@@ -80,6 +86,7 @@ public:
     }
 
     void requestTaskStop() {
+        lfDebug() << "requestTaskStop";
         Common::PacketHeader packet;
         packet.id = Common::PacketId::TaskStop;
         packet.size = 0;

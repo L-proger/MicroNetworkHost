@@ -3,7 +3,7 @@
 namespace MicroNetwork::Host {
 
 LFramework::ComPtr<Common::IDataReceiver> NodeContext::startTask(LFramework::Guid taskId, LFramework::ComPtr<Common::IDataReceiver> userDataReceiver) {
-    if (!initialized()) {
+    if (!isReady()) {
         return nullptr;
     }
 
@@ -18,6 +18,7 @@ LFramework::ComPtr<Common::IDataReceiver> NodeContext::startTask(LFramework::Gui
     Common::MaxPacket packet;
     packet.header.id = Common::PacketId::TaskStart;
     packet.setData(taskId);
+    //lfDebug() << "Sending task start...";
     _host->blockingWritePacket(packet.header, packet.payload.data());
 
     bool started = _nextTask->wait();

@@ -95,23 +95,25 @@ private:
                 for(auto& item : _readChain){
                     auto rxSize = item->asyncResult->wait();
 
-                   // lfDebug() << "Received USB packet: size=" << rxSize;
+                    //lfDebug() << "Received USB packet: size=" << rxSize;
                     if(rxSize == 0){
                         _synchronized = true;
                         //lfDebug() << "Sync received";
-                    }else if(_synchronized) {
-
-                        std::size_t doneRxSize = 0;
-                        while(true){
-                            doneRxSize += write(item->buffer.data() + doneRxSize, rxSize - doneRxSize);
-                            if(_running && (doneRxSize != rxSize)){
-                                lfDebug() << "RX buffer stall";
-                                _rxJob.take();
-                            }else{
-                                break;
+                    }else {
+                        if(_synchronized) {
+                            std::size_t doneRxSize = 0;
+                            while(true){
+                                doneRxSize += write(item->buffer.data() + doneRxSize, rxSize - doneRxSize);
+                                if(_running && (doneRxSize != rxSize)){
+                                    lfDebug() << "RX buffer stall";
+                                    _rxJob.take();
+                                }else{
+                                    break;
+                                }
                             }
+                        }else{
+                            //lfDebug() << "USB transmitter drop packet" << rxSize;
                         }
-                        //lfDebug() << "Received synced USB packet: size=" << rxSize;
                     }
 
                     if(_running){

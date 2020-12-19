@@ -129,7 +129,10 @@ protected:
     }
     void onRemoteDataAvailable() override {
         Common::MaxPacket packet;
-        if(readPacket(packet)){
+
+        while(readPacket(packet)){
+            //lfDebug() << "Host received packet: id=" << packet.header.id << " size=" << packet.header.size;
+
             if(packet.header.id == Common::PacketId::Bind){
                 std::lock_guard<std::mutex> lock(_nodeContextMutex);
 
@@ -142,7 +145,7 @@ protected:
                 auto nodeId = 0;
                 auto nodeContext = std::make_shared<NodeContext>(nodeId, tasksCount, this);
                 addNode(nodeId, nodeContext);
-                lfDebug() << "Node context created";
+                //lfDebug() << "Node context created";
                 _state++;
 
             }else{

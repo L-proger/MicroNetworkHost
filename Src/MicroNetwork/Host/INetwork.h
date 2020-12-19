@@ -8,6 +8,7 @@ namespace MicroNetwork::Host {
     class INetwork;
 
     enum class NodeState {
+        NotReady,
         Idle,
         TaskLaunched,
         InvalidNode
