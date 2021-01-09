@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 #include <MicroNetwork/Common/DataStream.h>
-#include <MicroNetwork/Common/IDataReceiver.h>
+#include <MicroNetwork.Common.h>
 #include <LFramework/USB/Host/UsbHDevice.h>
 #include <LFramework/Threading/Semaphore.h>
 #include <LFramework/Threading/CriticalSection.h>
@@ -49,7 +49,7 @@ public:
         while(true){
             _txAvailable.take();
             LFramework::Threading::CriticalSection lock;
-            if(freeSpace() >= header.fullSize()){
+            if(freeSpace() >= packetFullSize(header)){
                 write(&header, sizeof(header));
                 if(data != nullptr){
                     write(data, header.size);

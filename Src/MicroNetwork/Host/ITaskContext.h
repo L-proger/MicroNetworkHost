@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MicroNetwork/Common/IDataReceiver.h>
+#include <MicroNetwork.Common.h>
 
 namespace MicroNetwork::Host {
     class ITaskContext;

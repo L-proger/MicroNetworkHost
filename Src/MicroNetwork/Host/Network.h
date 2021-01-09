@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MicroNetwork/Common/IDataReceiver.h>
+#include <MicroNetwork.Common.h>
 #include <LFramework/Guid.h>
 #include <MicroNetwork/Host/INetwork.h>
 #include <MicroNetwork/Host/UsbLinkProvider.h>

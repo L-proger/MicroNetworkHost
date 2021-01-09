@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MicroNetwork/Common/IDataReceiver.h>
+#include <MicroNetwork.Common.h>
 #include <MicroNetwork/Common/Packet.h>
 #include <LFramework/Threading/Semaphore.h>
 #include <LFramework/Threading/CriticalSection.h>

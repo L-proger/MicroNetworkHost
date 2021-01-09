@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MicroNetwork/Common/IDataReceiver.h>
+#include <MicroNetwork.Common.h>
 #include <vector>
 #include <cstdint>
 

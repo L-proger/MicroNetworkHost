@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MicroNetwork/Common/IDataReceiver.h>
+#include <MicroNetwork.Common.h>
 #include <MicroNetwork/Host/ITaskContext.h>
 #include <atomic>
 #include <mutex>
