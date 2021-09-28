@@ -1,0 +1,14 @@
+target_sources(MicroNetworkHost 
+	PUBLIC
+		Host.h
+		ITaskContext.h
+		LinkProvider.h
+		Network.h
+		NodeContext.h
+		TaskContext.cpp
+		TaskContext.h
+		UsbLinkProvider.h
+		UsbTransmitter.h
+	PRIVATE
+		Host.cpp
+)
