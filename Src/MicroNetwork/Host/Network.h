@@ -2,7 +2,7 @@
 
 #include <MicroNetwork.Common.h>
 #include <LFramework/Guid.h>
-#include <MicroNetwork/Host/INetwork.h>
+#include <MicroNetwork.Host.h>
 #include <MicroNetwork/Host/UsbLinkProvider.h>
 #include <MicroNetwork/Host/NodeContext.h>
 #include <vector>
@@ -10,9 +10,22 @@
 #include <MicroNetwork/Host/Host.h>
 #include <algorithm>
 
+
+namespace std {
+    template <> struct hash<MicroNetwork::Host::NodeHandle>
+    {
+        size_t operator()(const MicroNetwork::Host::NodeHandle& x) const
+        {
+            return std::hash<std::uint32_t>{}(x.value);
+        }
+    };
+}
+
 namespace MicroNetwork::Host {
 
-
+    inline bool operator ==(const MicroNetwork::Host::NodeHandle& l, const MicroNetwork::Host::NodeHandle& r) {
+        return l.value == r.value;
+    }
 
 
 class LinkProviderContext : public ILinkCallback{
@@ -110,9 +123,9 @@ public:
         return NodeState::Idle;
     }
 
-    std::vector<std::uint32_t> getNodes(){
+    std::vector<NodeHandle> getNodes(){
         std::lock_guard<std::mutex> lock(_nodesMutex);
-        std::vector<std::uint32_t> result;
+        std::vector<NodeHandle> result;
         for(auto nodeRecord : _nodes){
             result.push_back(nodeRecord.first);
         }
@@ -125,7 +138,7 @@ public:
     void addNode(std::shared_ptr<NodeContext> node) override{
         lfDebug() << "Add node";
         std::lock_guard<std::mutex> lock(_nodesMutex);
-        _nodes[_lastNodeId++] = node;
+        _nodes[NodeHandle{ _lastNodeId++ }] = node;
         ++_stateId;
     }
     void removeNode(std::shared_ptr<NodeContext> node) override{
@@ -150,7 +163,7 @@ private:
     std::mutex _nodesMutex;
     std::uint32_t _lastNodeId = 0;
     std::atomic<std::uint32_t> _stateId = 0;
-    std::unordered_map<std::uint32_t, std::shared_ptr<NodeContext>> _nodes;
+    std::unordered_map<NodeHandle, std::shared_ptr<NodeContext>> _nodes;
     std::vector<std::shared_ptr<LinkProviderContext>> _linkProviders;
 };
 

@@ -11,8 +11,8 @@ struct NodeHandle {
 
 [Guid("CE29C75F-A57E-4632-8A88-6562E04455A1")]
 interface INetwork : IUnknown {
-	MicroNetwork.Common.IDataReceiver startTask(uint32 node, Guid taskId, MicroNetwork.Common.IDataReceiver userDataReceiver);
-    int32 isTaskSupported(uint32 node, Guid taskId);
+	MicroNetwork.Common.IDataReceiver startTask(NodeHandle node, Guid taskId, MicroNetwork.Common.IDataReceiver userDataReceiver);
+    int32 isTaskSupported(NodeHandle node, Guid taskId);
     NodeHandle[] getNodes();
     NodeState getNodeState(NodeHandle node);
     uint32 getStateId();
