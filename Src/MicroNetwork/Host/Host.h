@@ -4,7 +4,7 @@
 #include <vector>
 #include <MicroNetwork/Common/DataStream.h>
 #include <MicroNetwork.Common.h>
-#include <LFramework/USB/Host/UsbHDevice.h>
+#include <LFramework/USB/Host/IUsbDevice.h>
 #include <LFramework/Threading/Semaphore.h>
 #include <LFramework/Threading/CriticalSection.h>
 #include <MicroNetwork/Common/Packet.h>

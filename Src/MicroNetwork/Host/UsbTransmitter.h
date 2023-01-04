@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 #include <MicroNetwork/Common/DataStream.h>
-#include <LFramework/USB/Host/UsbHDevice.h>
+#include <LFramework/USB/Host/IUsbDevice.h>
 #include <LFramework/Threading/Semaphore.h>
 #include <LFramework/Threading/CriticalSection.h>
 #include <thread>
@@ -14,7 +14,7 @@ namespace MicroNetwork::Host {
 
 class UsbTransmitter : public Common::DataStream {
 public:
-    UsbTransmitter(std::shared_ptr<LFramework::USB::UsbHDevice> device) : _device(device) {
+    UsbTransmitter(std::shared_ptr<LFramework::USB::IUsbDevice> device) : _device(device) {
         auto usbInterface = _device->getInterface(0);
         _txEndpoint = usbInterface->getEndpoint(false, 0);
         _rxEndpoint = usbInterface->getEndpoint(true, 0);
@@ -59,10 +59,10 @@ private:
        explicit ReadChainItem(size_t bufferSize) {
            buffer.resize(bufferSize);
        }
-       std::shared_ptr<LFramework::USB::WinUsbFuture> asyncResult;
+       std::shared_ptr<LFramework::USB::IUsbTransfer> asyncResult;
        std::vector<uint8_t> buffer;
 
-       void readAsync(LFramework::USB::UsbHEndpoint* ep) {
+       void readAsync(LFramework::USB::IUsbEndpoint* ep) {
             asyncResult = ep->transferAsync(buffer.data(), buffer.size());
        }
     };
@@ -170,9 +170,9 @@ private:
 
     LFramework::Threading::BinarySemaphore _rxJob;
     LFramework::Threading::BinarySemaphore _txJob;
-    LFramework::USB::UsbHEndpoint* _txEndpoint = nullptr;
-    LFramework::USB::UsbHEndpoint* _rxEndpoint = nullptr;
-    std::shared_ptr<LFramework::USB::UsbHDevice> _device;
+    LFramework::USB::IUsbEndpoint* _txEndpoint = nullptr;
+    LFramework::USB::IUsbEndpoint* _rxEndpoint = nullptr;
+    std::shared_ptr<LFramework::USB::IUsbDevice> _device;
     std::vector<std::shared_ptr<ReadChainItem>> _readChain;
 };
 
