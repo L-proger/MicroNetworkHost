@@ -3,6 +3,7 @@
 #include <MicroNetwork/Host/LinkProvider.h>
 #include <optional>
 #include <LFramework/USB/Host/IUsbService.h>
+#include <LFramework/USB/Host/IUsbDevice.h>
 #include <MicroNetwork/Host/UsbTransmitter.h>
 
 namespace MicroNetwork::Host {
@@ -11,7 +12,7 @@ class UsbLinkProvider : public LinkProvider {
 public:
     UsbLinkProvider(std::optional<std::uint16_t> vid, std::optional<std::uint16_t> pid, ILinkCallback* linkCallback) : LinkProvider(linkCallback),
      _vid(vid), _pid(pid){
-        //_usbService.emplace();
+        _usbService = std::shared_ptr<LFramework::USB::IUsbService>(LFramework::USB::createUsbService());
         _usbService->startEventsListening(std::bind(&UsbLinkProvider::onUsbDevicesChange, this));
     }
 
@@ -40,7 +41,7 @@ private:
     }
 
     std::shared_ptr<Common::DataStream> makeStream(const std::string& linkPath) override {
-        std::shared_ptr<LFramework::USB::IUsbDevice> device;  //std::make_shared<LFramework::USB::IUsbDevice>(linkPath);
+        std::shared_ptr<LFramework::USB::IUsbDevice> device(LFramework::USB::openUsbDevice(linkPath));
         return std::make_shared<Host::UsbTransmitter>(device);
     }
 
