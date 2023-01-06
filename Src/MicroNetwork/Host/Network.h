@@ -58,7 +58,7 @@ public:
                     lfDebug() << "Host created for path: " << link.c_str();
                     _hosts.push_back(host);
                 }catch(const std::exception& ex){
-                    lfDebug() << "Failed to create stream for path: " << link.c_str();
+                    lfDebug() << "Failed to create stream for path: " << link.c_str() << " Error: " << ex.what();
                 }
             }
         }

@@ -7,6 +7,7 @@
 #include <LFramework/Debug.h>
 #include <vector>
 #include <MicroNetwork/Host/TaskContext.h>
+#include <iostream>
 
 namespace MicroNetwork::Host {
 
@@ -51,7 +52,12 @@ public:
             }
         }else{
             std::lock_guard<std::recursive_mutex> lock(_taskMutex);
-            _currentTask->handleNetworkPacket(header, data);
+            if(_currentTask != nullptr){
+                _currentTask->handleNetworkPacket(header, data);
+            }else{
+                std::cout << "Drop USB packet because task is nullptr" << std::endl;
+            }
+            
         }
     }
     bool handleUserPacket(Common::PacketHeader header, const void* data);

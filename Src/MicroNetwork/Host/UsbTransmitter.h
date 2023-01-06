@@ -62,7 +62,7 @@ private:
        std::shared_ptr<LFramework::USB::IUsbTransfer> asyncResult;
        std::vector<uint8_t> buffer;
 
-       void readAsync(LFramework::USB::IUsbEndpoint* ep) {
+       void readAsync(LFramework::USB::IUsbHostEndpoint* ep) {
             asyncResult = ep->transferAsync(buffer.data(), buffer.size());
        }
     };
@@ -170,8 +170,8 @@ private:
 
     LFramework::Threading::BinarySemaphore _rxJob;
     LFramework::Threading::BinarySemaphore _txJob;
-    LFramework::USB::IUsbEndpoint* _txEndpoint = nullptr;
-    LFramework::USB::IUsbEndpoint* _rxEndpoint = nullptr;
+    LFramework::USB::IUsbHostEndpoint* _txEndpoint = nullptr;
+    LFramework::USB::IUsbHostEndpoint* _rxEndpoint = nullptr;
     std::shared_ptr<LFramework::USB::IUsbDevice> _device;
     std::vector<std::shared_ptr<ReadChainItem>> _readChain;
 };
