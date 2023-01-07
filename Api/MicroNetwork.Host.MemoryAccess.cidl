@@ -1,0 +1,7 @@
+
+
+[Guid("0008FD4F-2B3C-4410-B1E7-0563D041AA84")]
+interface ITask : MicroNetwork.Host.ITask {
+	uint8[] getPacket();
+    void sendPacket(uint8[] data);
+}
