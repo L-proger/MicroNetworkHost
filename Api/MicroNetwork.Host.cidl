@@ -17,3 +17,9 @@ interface INetwork : IUnknown {
     NodeState getNodeState(NodeHandle node);
     uint32 getStateId();
 }
+
+
+[Guid("3D620300-77E1-4711-87E5-351158C33326")]
+interface ITask : IUnknown {
+	bool isConnected();
+}
