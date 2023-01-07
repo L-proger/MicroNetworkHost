@@ -19,6 +19,12 @@ interface INetwork : IUnknown {
 }
 
 
+[Guid("193287CB-F6FD-4086-9DE8-787F05B64F26")]
+interface ILibrary : IUnknown {
+	INetwork createNetwork(uint16 vid, uint16 pid);
+}
+
+
 [Guid("3D620300-77E1-4711-87E5-351158C33326")]
 interface ITask : IUnknown {
 	bool isConnected();
