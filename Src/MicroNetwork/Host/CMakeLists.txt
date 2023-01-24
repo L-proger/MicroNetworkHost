@@ -1,5 +1,5 @@
 target_sources(MicroNetworkHost 
-	PUBLIC
+INTERFACE
 		Host.h
 		ITaskContext.h
 		LinkProvider.h
@@ -9,6 +9,6 @@ target_sources(MicroNetworkHost
 		TaskContext.h
 		UsbLinkProvider.h
 		UsbTransmitter.h
-	PRIVATE
+	
 		Host.cpp
 )
