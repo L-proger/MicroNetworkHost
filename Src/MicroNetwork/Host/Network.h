@@ -146,6 +146,7 @@ public:
         std::lock_guard<std::mutex> lock(_nodesMutex);
         for(auto nodeRecord : _nodes){
             if(nodeRecord.second == node){
+                nodeRecord.second->onLinkDisconnect();
                 _nodes.erase(nodeRecord.first);
                 break;
             }

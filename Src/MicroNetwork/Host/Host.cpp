@@ -7,6 +7,10 @@ LFramework::ComPtr<Common::IDataReceiver> NodeContext::startTask(LFramework::Gui
         return nullptr;
     }
 
+      auto a0 = userDataReceiver->addRef();
+    auto a1 = userDataReceiver->release();
+
+
     {
         std::lock_guard<std::recursive_mutex> lock(_taskMutex);
         if((_currentTask != nullptr) || (_nextTask != nullptr)){

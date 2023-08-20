@@ -68,6 +68,16 @@ public:
 
     LFramework::ComPtr<Common::IDataReceiver> startTask(LFramework::Guid taskId, LFramework::ComPtr<Common::IDataReceiver> userDataReceiver);
 
+    void onLinkDisconnect() {
+        LFramework::ComPtr<ITaskContext> task;
+        {
+            std::lock_guard<std::recursive_mutex> lock(_taskMutex);
+            task = _currentTask;
+            _currentTask = nullptr;
+        }
+        task = nullptr;
+    }
+
     void addTask(LFramework::Guid taskId) {
         std::lock_guard<std::recursive_mutex> lock(_taskMutex);
         _tasks.push_back(taskId);
