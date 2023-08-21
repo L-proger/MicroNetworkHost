@@ -16,15 +16,17 @@ LFramework::Result TaskContext::packet(Common::PacketHeader header, const void* 
 void TaskContext::onNetworkRelease() {
     std::lock_guard<std::recursive_mutex> lock(_taskMutex);
     _txClosed = true;
-    auto a0 = _userDataReceiver->addRef();
-    auto a1 = _userDataReceiver->release();
+    _node = nullptr;
     _userDataReceiver.reset();
 
 
 }
 void TaskContext::onUserRelease() {
     std::lock_guard<std::recursive_mutex> lock(_taskMutex);
-    _node->requestTaskStop();
+    if(_node != nullptr){
+        _node->requestTaskStop();
+    }
+   
     _txClosed = true;
 }
 
